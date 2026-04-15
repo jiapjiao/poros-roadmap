@@ -42,19 +42,20 @@ for product in df["产品名称"].dropna().unique().tolist():
     if st.sidebar.checkbox(product, value=True, key=product):
         selected_products.append(product)
 
-# ====================== 主图绘制 ======================
+# ====================== 主图绘制（强制按产品列表顺序排列） ======================
 fig = go.Figure()
 colors = ['#1f77b4', '#9467bd', '#2ca02c', '#ff7f0e', '#d62728']
 
+# 关键修复：按 df 中出现的顺序绘制（从上到下）
 for i, row in df.iterrows():
     product = str(row.get("产品名称", "")).strip()
     if not product:
         continue
        
     is_highlighted = product in selected_products
-    color = colors[i % len(colors)]   # 保持原本颜色
+    color = colors[i % len(colors)]
     opacity = 1.0 if is_highlighted else 0.35
-    line_width = 13 if is_highlighted else 7   # 高亮时只加粗，不改颜色
+    line_width = 13 if is_highlighted else 7
 
     # 水平时间线
     if pd.notna(row.get("起始日期")) and pd.notna(row.get("结束日期")):
@@ -110,12 +111,12 @@ fig.update_layout(
     title="Poros 产品路线图 2026 Q2",
     xaxis_title="时间轴",
     yaxis_title="",
-    height=950,
+    height=1050,
     showlegend=False,
     hovermode="closest",
     plot_bgcolor="white",
     xaxis=dict(type='date', tickformat='%Y-%m-%d'),
-    margin=dict(l=300, r=50, t=100, b=100),
+    margin=dict(l=320, r=50, t=100, b=100),
     font=dict(size=16)
 )
 
