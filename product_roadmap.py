@@ -34,7 +34,7 @@ def load_data():
 
 df = load_data()
 
-# ====================== 左侧多选（保持界面干净） ======================
+# ====================== 左侧多选 ======================
 st.sidebar.header("📋 产品列表（可多选）")
 
 selected_products = []
@@ -52,9 +52,9 @@ for i, row in df.iterrows():
         continue
        
     is_highlighted = product in selected_products
-    color = '#E74C3C' if is_highlighted else colors[i % len(colors)]
+    color = colors[i % len(colors)]   # 保持原本颜色
     opacity = 1.0 if is_highlighted else 0.35
-    line_width = 13 if is_highlighted else 7
+    line_width = 13 if is_highlighted else 7   # 高亮时只加粗，不改颜色
 
     # 水平时间线
     if pd.notna(row.get("起始日期")) and pd.notna(row.get("结束日期")):
