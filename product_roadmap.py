@@ -4,7 +4,7 @@ import plotly.graph_objects as go
 
 st.set_page_config(page_title="Poros 产品路线图", layout="wide")
 st.title("🚀 Poros 产品路线图 2026 Q2")
-st.markdown("**左侧可多选产品，选中后对应时间轴会明显高亮**")
+st.markdown("**左侧勾选产品，可同时选中多个，高亮显示对应时间轴**")
 
 # ====================== 加载数据 ======================
 @st.cache_data
@@ -32,17 +32,17 @@ def load_data():
 
 df = load_data()
 
-# ====================== 左侧多选菜单 ======================
-st.sidebar.header("📋 产品列表")
+# ====================== 左侧菜单（干净的多选方式） ======================
+st.sidebar.header("📋 产品列表（可多选）")
 
-selected_products = st.sidebar.multiselect(
-    "选择要查看的产品（可多选）",
-    options=df["产品名称"].dropna().unique().tolist(),
-    default=df["产品名称"].dropna().unique().tolist()  # 默认全选
-)
+# 使用 checkbox 实现多选，界面更干净
+selected_products = []
+for product in df["产品名称"].dropna().unique().tolist():
+    if st.sidebar.checkbox(product, value=True, key=product):
+        selected_products.append(product)
 
-# ====================== 柔和莫兰迪高亮色卡 ======================
-highlight_colors = ['#E06C75', '#F4A261', '#F1C40F', '#A8DADC', '#457B9D', '#6D9B7F', '#B5838D']
+# ====================== 高亮颜色（莫兰迪柔和色） ======================
+highlight_colors = ['#E06C75', '#F4A261', '#F1C40F', '#A8DADC', '#457B9D', '#6D9B7F']
 
 # ====================== 主图绘制 ======================
 fig = go.Figure()
@@ -52,15 +52,14 @@ for i, row in df.iterrows():
     if not product:
         continue
         
-    # 高亮判断
     is_highlighted = product in selected_products
-    opacity = 1.0 if is_highlighted else 0.25
-    line_width = 12 if is_highlighted else 5.5
-    
-    # 高亮时使用莫兰迪色，不高亮时用灰色
+    opacity = 1.0 if is_highlighted else 0.22
+    line_width = 13 if is_highlighted else 5
+
+    # 高亮时使用亮色，不高亮时用灰色
     color = highlight_colors[i % len(highlight_colors)] if is_highlighted else '#9ca3af'
 
-    # 水平时间线（重点高亮）
+    # 水平时间线
     if pd.notna(row.get("起始日期")) and pd.notna(row.get("结束日期")):
         fig.add_trace(go.Scatter(
             x=[row["起始日期"], row["结束日期"]],
@@ -77,12 +76,11 @@ for i, row in df.iterrows():
             x=[row["起始日期"]],
             y=[product],
             mode='markers+text',
-            marker=dict(size=17, color='#2c7da0', symbol='circle'),
+            marker=dict(size=17, color='#2c7da0'),
             text=[f"M1 {row['起始日期'].strftime('%m-%d')}"],
             textposition="top center",
             textfont=dict(size=15),
-            opacity=opacity,
-            hovertemplate=f"<b>{product}</b><br>起始: {row['起始日期'].strftime('%Y-%m-%d')}<br>{row.get('M1描述', '')}<extra></extra>"
+            opacity=opacity
         ))
 
     # 中程节点 + 日期
@@ -91,12 +89,11 @@ for i, row in df.iterrows():
             x=[row["中程日期"]],
             y=[product],
             mode='markers+text',
-            marker=dict(size=17, color='#8b6fb8', symbol='circle'),
+            marker=dict(size=17, color='#8b6fb8'),
             text=[f"M2 {row['中程日期'].strftime('%m-%d')}"],
             textposition="top center",
             textfont=dict(size=15),
-            opacity=opacity,
-            hovertemplate=f"<b>{product}</b><br>中程: {row['中程日期'].strftime('%Y-%m-%d')}<br>{row.get('M2描述', '')}<extra></extra>"
+            opacity=opacity
         ))
 
     # 结束节点 + 日期
@@ -105,12 +102,11 @@ for i, row in df.iterrows():
             x=[row["结束日期"]],
             y=[product],
             mode='markers+text',
-            marker=dict(size=17, color='#4a9b6e', symbol='circle'),
+            marker=dict(size=17, color='#4a9b6e'),
             text=[f"M3 {row['结束日期'].strftime('%m-%d')}"],
             textposition="top center",
             textfont=dict(size=15),
-            opacity=opacity,
-            hovertemplate=f"<b>{product}</b><br>结束: {row['结束日期'].strftime('%Y-%m-%d')}<br>{row.get('M3描述', '')}<extra></extra>"
+            opacity=opacity
         ))
 
 fig.update_layout(
@@ -133,7 +129,7 @@ st.sidebar.markdown("---")
 if selected_products:
     for prod in selected_products:
         detail = df[df["产品名称"] == prod].iloc[0]
-        with st.sidebar.expander(f"📋 {prod} 详细信息", expanded=(len(selected_products) <= 3)):
+        with st.sidebar.expander(f"📋 {prod} 详细信息", expanded=False):
             st.write(f"**负责人**：{detail.get('负责人', '未填写')}")
             st.write(f"**当前状态**：{detail.get('当前状态', '未填写')}")
             st.write(f"**🔵 起始**：{detail.get('起始日期', '')} | {detail.get('M1描述', '')}")
