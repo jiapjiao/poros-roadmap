@@ -2,11 +2,10 @@ import streamlit as st
 import pandas as pd
 import plotly.graph_objects as go
 from datetime import datetime
-import numpy as np
 
 st.set_page_config(page_title="Poros 产品路线图", layout="wide")
 st.title("🚀 Poros 产品路线图 2026 Q2")
-st.markdown("**左侧选择产品（支持多选 + 查看全部），右侧高亮显示对应时间线**")
+st.markdown("**左侧选择产品（支持多选），右侧高亮显示对应时间线**")
 
 # ====================== 加载数据 ======================
 @st.cache_data
@@ -34,10 +33,9 @@ def load_data():
 
 df = load_data()
 
-# ====================== 左侧菜单（支持多选 + 查看全部） ======================
+# ====================== 左侧菜单（支持查看全部 + 多选） ======================
 st.sidebar.header("📋 产品列表")
 
-# 添加“查看全部”选项
 show_all = st.sidebar.checkbox("查看全部产品", value=True)
 
 if show_all:
@@ -46,16 +44,13 @@ else:
     selected_products = st.sidebar.multiselect(
         "选择要查看的产品（可多选）",
         options=df["产品名称"].dropna().unique().tolist(),
-        default=df["产品名称"].dropna().unique().tolist()[:3]  # 默认显示前3个
+        default=[]
     )
 
-# ====================== 按负责人分配柔和颜色 ======================
-# 提取负责人（取第一个负责人作为主色）
+# ====================== 颜色映射（按负责人柔和分配） ======================
 df['主负责人'] = df['负责人'].astype(str).str.split('@').str[0].str.strip()
-
 unique_owners = df['主负责人'].unique()
 soft_colors = ['#4a90e2', '#7b68ee', '#50c878', '#f4a261', '#e76f51', '#2a9d8f']
-
 owner_color_map = {owner: soft_colors[i % len(soft_colors)] for i, owner in enumerate(unique_owners)}
 
 # ====================== 主图绘制 ======================
@@ -63,20 +58,24 @@ fig = go.Figure()
 
 for i, row in df.iterrows():
     product = str(row.get("产品名称", "")).strip()
-    if not product or product not in selected_products:
+    if not product:
         continue
         
     owner = row['主负责人']
     color = owner_color_map.get(owner, '#6b7280')
-    opacity = 1.0 if len(selected_products) <= 5 else 0.85   # 产品多时略微透明
+    
+    # 高亮逻辑：如果选中了该产品，则高亮，否则淡化
+    is_highlighted = product in selected_products
+    opacity = 1.0 if is_highlighted else 0.25
+    line_width = 10 if is_highlighted else 6
 
-    # 水平时间线
+    # 水平时间线（动态亮度）
     if pd.notna(row.get("起始日期")) and pd.notna(row.get("结束日期")):
         fig.add_trace(go.Scatter(
             x=[row["起始日期"], row["结束日期"]],
             y=[product, product],
             mode='lines',
-            line=dict(color=color, width=8),
+            line=dict(color=color, width=line_width),
             opacity=opacity,
             hoverinfo='skip'
         ))
@@ -130,7 +129,7 @@ fig.update_layout(
     plot_bgcolor="#f8fafc",
     xaxis=dict(type='date', tickformat='%Y-%m-%d'),
     margin=dict(l=300, r=50, t=100, b=100),
-    font=dict(size=14)   # 字体加大
+    font=dict(size=15)   # 字体加大
 )
 
 st.plotly_chart(fig, use_container_width=True)
@@ -140,7 +139,7 @@ st.sidebar.markdown("---")
 if selected_products:
     for prod in selected_products:
         detail = df[df["产品名称"] == prod].iloc[0]
-        with st.sidebar.expander(f"📋 {prod} 详细信息", expanded=(len(selected_products) <= 3)):
+        with st.sidebar.expander(f"📋 {prod} 详细信息", expanded=True):
             st.write(f"**负责人**：{detail.get('负责人', '未填写')}")
             st.write(f"**当前状态**：{detail.get('当前状态', '未填写')}")
             st.write(f"**🔵 起始**：{detail.get('起始日期', '')} | {detail.get('M1描述', '')}")
