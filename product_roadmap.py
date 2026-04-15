@@ -1,11 +1,10 @@
 import streamlit as st
 import pandas as pd
 import plotly.graph_objects as go
-from datetime import datetime
 
 st.set_page_config(page_title="Poros 产品路线图", layout="wide")
 st.title("🚀 Poros 产品路线图 2026 Q2")
-st.markdown("**左侧可多选产品，选中后对应时间轴会高亮显示**")
+st.markdown("**左侧可多选产品，选中后对应时间轴会明显高亮**")
 
 # ====================== 加载数据 ======================
 @st.cache_data
@@ -33,18 +32,17 @@ def load_data():
 
 df = load_data()
 
-# ====================== 左侧菜单（支持多选） ======================
+# ====================== 左侧多选菜单 ======================
 st.sidebar.header("📋 产品列表")
 
-# 多选产品（默认全选）
 selected_products = st.sidebar.multiselect(
     "选择要查看的产品（可多选）",
     options=df["产品名称"].dropna().unique().tolist(),
-    default=df["产品名称"].dropna().unique().tolist()
+    default=df["产品名称"].dropna().unique().tolist()  # 默认全选
 )
 
-# ====================== 柔和莫兰迪色卡（按你提供的色卡调整） ======================
-highlight_colors = ['#E06C75', '#F4A261', '#F1C40F', '#A8DADC', '#457B9D', '#6D9B7F']
+# ====================== 柔和莫兰迪高亮色卡 ======================
+highlight_colors = ['#E06C75', '#F4A261', '#F1C40F', '#A8DADC', '#457B9D', '#6D9B7F', '#B5838D']
 
 # ====================== 主图绘制 ======================
 fig = go.Figure()
@@ -54,15 +52,15 @@ for i, row in df.iterrows():
     if not product:
         continue
         
-    # 是否被选中
-    is_selected = product in selected_products
-    opacity = 1.0 if is_selected else 0.25
-    line_width = 11 if is_selected else 6
+    # 高亮判断
+    is_highlighted = product in selected_products
+    opacity = 1.0 if is_highlighted else 0.25
+    line_width = 12 if is_highlighted else 5.5
     
-    # 高亮颜色（选中时使用莫兰迪色卡）
-    color = highlight_colors[i % len(highlight_colors)] if is_selected else '#d1d5db'
+    # 高亮时使用莫兰迪色，不高亮时用灰色
+    color = highlight_colors[i % len(highlight_colors)] if is_highlighted else '#9ca3af'
 
-    # 水平时间线
+    # 水平时间线（重点高亮）
     if pd.notna(row.get("起始日期")) and pd.notna(row.get("结束日期")):
         fig.add_trace(go.Scatter(
             x=[row["起始日期"], row["结束日期"]],
@@ -79,7 +77,7 @@ for i, row in df.iterrows():
             x=[row["起始日期"]],
             y=[product],
             mode='markers+text',
-            marker=dict(size=16, color='#5a8bb5', symbol='circle'),
+            marker=dict(size=17, color='#2c7da0', symbol='circle'),
             text=[f"M1 {row['起始日期'].strftime('%m-%d')}"],
             textposition="top center",
             textfont=dict(size=15),
@@ -93,7 +91,7 @@ for i, row in df.iterrows():
             x=[row["中程日期"]],
             y=[product],
             mode='markers+text',
-            marker=dict(size=16, color='#8b6fb8', symbol='circle'),
+            marker=dict(size=17, color='#8b6fb8', symbol='circle'),
             text=[f"M2 {row['中程日期'].strftime('%m-%d')}"],
             textposition="top center",
             textfont=dict(size=15),
@@ -107,7 +105,7 @@ for i, row in df.iterrows():
             x=[row["结束日期"]],
             y=[product],
             mode='markers+text',
-            marker=dict(size=16, color='#5a9b7a', symbol='circle'),
+            marker=dict(size=17, color='#4a9b6e', symbol='circle'),
             text=[f"M3 {row['结束日期'].strftime('%m-%d')}"],
             textposition="top center",
             textfont=dict(size=15),
@@ -119,12 +117,12 @@ fig.update_layout(
     title="Poros 产品路线图 2026 Q2",
     xaxis_title="时间轴",
     yaxis_title="",
-    height=1000,
+    height=1050,
     showlegend=False,
     hovermode="closest",
     plot_bgcolor="#f8fafc",
     xaxis=dict(type='date', tickformat='%Y-%m-%d'),
-    margin=dict(l=300, r=50, t=100, b=100),
+    margin=dict(l=320, r=60, t=120, b=100),
     font=dict(size=16)
 )
 
@@ -135,7 +133,7 @@ st.sidebar.markdown("---")
 if selected_products:
     for prod in selected_products:
         detail = df[df["产品名称"] == prod].iloc[0]
-        with st.sidebar.expander(f"📋 {prod} 详细信息", expanded=True):
+        with st.sidebar.expander(f"📋 {prod} 详细信息", expanded=(len(selected_products) <= 3)):
             st.write(f"**负责人**：{detail.get('负责人', '未填写')}")
             st.write(f"**当前状态**：{detail.get('当前状态', '未填写')}")
             st.write(f"**🔵 起始**：{detail.get('起始日期', '')} | {detail.get('M1描述', '')}")
