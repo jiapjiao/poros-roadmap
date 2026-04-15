@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 import plotly.graph_objects as go
+from datetime import datetime
 
 st.set_page_config(page_title="Poros 产品路线图", layout="wide")
 st.title("🚀 Poros 产品路线图 2026 Q2")
@@ -24,9 +25,6 @@ def load_data():
         "结束日期": "结束日期"
     })
     
-    # 关键修复：清理产品名称中的空格和不可见字符
-    df["产品名称"] = df["产品名称"].astype(str).str.strip()
-    
     for col in ["起始日期", "中程日期", "结束日期"]:
         if col in df.columns:
             df[col] = pd.to_datetime(df[col], errors='coerce')
@@ -45,20 +43,18 @@ if not product_list:
 
 selected_product = st.sidebar.radio("选择产品查看详情", product_list)
 
-# ====================== 主图绘制（加强高亮） ======================
+# ====================== 主图绘制 ======================
 fig = go.Figure()
+colors = ['#1f77b4', '#9467bd', '#2ca02c', '#ff7f0e', '#d62728']
 
 for i, row in df.iterrows():
     product = str(row.get("产品名称", "")).strip()
     if not product:
         continue
        
-    # 加强匹配（忽略大小写和多余空格）
-    is_highlighted = (product.strip().lower() == str(selected_product).strip().lower())
-    
-    color = '#E74C3C' if is_highlighted else ['#1f77b4', '#9467bd', '#2ca02c', '#ff7f0e', '#d62728'][i % 5]
-    opacity = 1.0 if is_highlighted else 0.35
-    line_width = 13 if is_highlighted else 7   # 高亮时明显加粗
+    color = colors[i % len(colors)]
+    opacity = 1.0 if product == selected_product else 0.3
+    line_width = 12 if product == selected_product else 7   # 高亮时加粗
 
     # 水平时间线
     if pd.notna(row.get("起始日期")) and pd.notna(row.get("结束日期")):
@@ -71,7 +67,7 @@ for i, row in df.iterrows():
             hoverinfo='skip'
         ))
 
-    # 起始节点
+    # 起始节点 (蓝色)
     if pd.notna(row.get("起始日期")):
         fig.add_trace(go.Scatter(
             x=[row["起始日期"]],
@@ -84,7 +80,7 @@ for i, row in df.iterrows():
             hovertemplate=f"<b>{product}</b><br>起始: {row['起始日期'].strftime('%Y-%m-%d')}<br>{row.get('M1描述', '')}<extra></extra>"
         ))
 
-    # 中程节点
+    # 中程节点 (紫色)
     if pd.notna(row.get("中程日期")):
         fig.add_trace(go.Scatter(
             x=[row["中程日期"]],
@@ -97,7 +93,7 @@ for i, row in df.iterrows():
             hovertemplate=f"<b>{product}</b><br>中程: {row['中程日期'].strftime('%Y-%m-%d')}<br>{row.get('M2描述', '')}<extra></extra>"
         ))
 
-    # 结束节点
+    # 结束节点 (绿色)
     if pd.notna(row.get("结束日期")):
         fig.add_trace(go.Scatter(
             x=[row["结束日期"]],
@@ -119,7 +115,8 @@ fig.update_layout(
     hovermode="closest",
     plot_bgcolor="white",
     xaxis=dict(type='date', tickformat='%Y-%m-%d'),
-    margin=dict(l=300, r=50, t=100, b=100)
+    margin=dict(l=300, r=50, t=100, b=100),
+    font=dict(size=18)   # 全局字体加大
 )
 
 st.plotly_chart(fig, use_container_width=True)
@@ -127,24 +124,21 @@ st.plotly_chart(fig, use_container_width=True)
 # ====================== 右侧详情 ======================
 st.sidebar.markdown("---")
 if selected_product:
-    # 加强匹配查找详情
-    detail_row = df[df["产品名称"].str.strip().str.lower() == str(selected_product).strip().lower()]
-    if not detail_row.empty:
-        detail = detail_row.iloc[0]
-        st.sidebar.subheader(f"📋 {selected_product} 详细信息")
-        st.sidebar.write(f"**负责人**：{detail.get('负责人', '未填写')}")
-        st.sidebar.write(f"**当前状态**：{detail.get('当前状态', '未填写')}")
-       
-        st.sidebar.markdown("**🔵 起始节点**")
-        st.sidebar.write(f"日期：{detail.get('起始日期', '未填写')}")
-        st.sidebar.write(f"描述：{detail.get('M1描述', '未填写')}")
-       
-        st.sidebar.markdown("**🟣 中程节点**")
-        st.sidebar.write(f"日期：{detail.get('中程日期', '未填写')}")
-        st.sidebar.write(f"描述：{detail.get('M2描述', '未填写')}")
-       
-        st.sidebar.markdown("**🟢 结束节点**")
-        st.sidebar.write(f"日期：{detail.get('结束日期', '未填写')}")
-        st.sidebar.write(f"描述：{detail.get('M3描述', '未填写')}")
+    detail = df[df["产品名称"].str.strip() == selected_product].iloc[0]
+    st.sidebar.subheader(f"📋 {selected_product} 详细信息")
+    st.sidebar.write(f"**负责人**：{detail.get('负责人', '未填写')}")
+    st.sidebar.write(f"**当前状态**：{detail.get('当前状态', '未填写')}")
+   
+    st.sidebar.markdown("**🔵 起始节点**")
+    st.sidebar.write(f"日期：{detail.get('起始日期', '未填写')}")
+    st.sidebar.write(f"描述：{detail.get('M1描述', '未填写')}")
+   
+    st.sidebar.markdown("**🟣 中程节点**")
+    st.sidebar.write(f"日期：{detail.get('中程日期', '未填写')}")
+    st.sidebar.write(f"描述：{detail.get('M2描述', '未填写')}")
+   
+    st.sidebar.markdown("**🟢 结束节点**")
+    st.sidebar.write(f"日期：{detail.get('结束日期', '未填写')}")
+    st.sidebar.write(f"描述：{detail.get('M3描述', '未填写')}")
 
 st.caption("数据来源：data.xlsx | 修改Excel后重新部署即可更新")
