@@ -64,7 +64,7 @@ for i, row in df.iterrows():
     owner = row['主负责人']
     color = owner_color_map.get(owner, '#6b7280')
     
-    # 高亮逻辑：如果选中了该产品，则高亮，否则淡化
+    # 高亮逻辑
     is_highlighted = product in selected_products
     opacity = 1.0 if is_highlighted else 0.25
     line_width = 10 if is_highlighted else 6
@@ -129,7 +129,7 @@ fig.update_layout(
     plot_bgcolor="#f8fafc",
     xaxis=dict(type='date', tickformat='%Y-%m-%d'),
     margin=dict(l=300, r=50, t=100, b=100),
-    font=dict(size=15)   # 字体加大
+    font=dict(size=15)
 )
 
 st.plotly_chart(fig, use_container_width=True)
