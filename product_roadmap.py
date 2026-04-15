@@ -4,13 +4,12 @@ import plotly.graph_objects as go
 
 st.set_page_config(page_title="Poros 产品路线图", layout="wide")
 st.title("🚀 Poros 产品路线图 2026 Q2")
-st.markdown("**左侧勾选产品，可同时选中多个，高亮显示对应时间轴**")
+st.markdown("**左侧勾选产品（可多选），选中后对应时间轴会明显高亮**")
 
 # ====================== 加载数据 ======================
 @st.cache_data
 def load_data():
-    file_path = "data.xlsx"
-    df = pd.read_excel(file_path, sheet_name="产品信息与Milestone")
+    df = pd.read_excel("data.xlsx", sheet_name="产品信息与Milestone")
     
     df = df.rename(columns={
         "产品名称": "产品名称",
@@ -32,19 +31,18 @@ def load_data():
 
 df = load_data()
 
-# ====================== 左侧菜单（干净的多选方式） ======================
+# ====================== 左侧多选 ======================
 st.sidebar.header("📋 产品列表（可多选）")
 
-# 使用 checkbox 实现多选，界面更干净
 selected_products = []
 for product in df["产品名称"].dropna().unique().tolist():
     if st.sidebar.checkbox(product, value=True, key=product):
         selected_products.append(product)
 
-# ====================== 高亮颜色（莫兰迪柔和色） ======================
-highlight_colors = ['#E06C75', '#F4A261', '#F1C40F', '#A8DADC', '#457B9D', '#6D9B7F']
+# ====================== 高亮颜色 ======================
+highlight_colors = ['#E74C3C', '#F39C12', '#F1C40F', '#3498DB', '#9B59B6', '#1ABC9C']
 
-# ====================== 主图绘制 ======================
+# ====================== 主图 ======================
 fig = go.Figure()
 
 for i, row in df.iterrows():
@@ -53,13 +51,12 @@ for i, row in df.iterrows():
         continue
         
     is_highlighted = product in selected_products
-    opacity = 1.0 if is_highlighted else 0.22
-    line_width = 13 if is_highlighted else 5
+    opacity = 1.0 if is_highlighted else 0.25
+    line_width = 16 if is_highlighted else 5.5   # 明显加粗
 
-    # 高亮时使用亮色，不高亮时用灰色
-    color = highlight_colors[i % len(highlight_colors)] if is_highlighted else '#9ca3af'
+    color = highlight_colors[i % len(highlight_colors)] if is_highlighted else '#95a5a6'
 
-    # 水平时间线
+    # 时间线
     if pd.notna(row.get("起始日期")) and pd.notna(row.get("结束日期")):
         fig.add_trace(go.Scatter(
             x=[row["起始日期"], row["结束日期"]],
@@ -70,55 +67,56 @@ for i, row in df.iterrows():
             hoverinfo='skip'
         ))
 
-    # 起始节点 + 日期
+    # 节点（只显示日期，不显示M1/M2/M3标签）
     if pd.notna(row.get("起始日期")):
         fig.add_trace(go.Scatter(
             x=[row["起始日期"]],
             y=[product],
             mode='markers+text',
-            marker=dict(size=17, color='#2c7da0'),
-            text=[f"M1 {row['起始日期'].strftime('%m-%d')}"],
+            marker=dict(size=18, color='#2c7da0'),
+            text=[row['起始日期'].strftime('%m-%d')],
             textposition="top center",
-            textfont=dict(size=15),
-            opacity=opacity
+            textfont=dict(size=14),
+            opacity=opacity,
+            hovertemplate=f"<b>{product}</b><br>{row.get('M1描述', '无描述')}<extra></extra>"
         ))
 
-    # 中程节点 + 日期
     if pd.notna(row.get("中程日期")):
         fig.add_trace(go.Scatter(
             x=[row["中程日期"]],
             y=[product],
             mode='markers+text',
-            marker=dict(size=17, color='#8b6fb8'),
-            text=[f"M2 {row['中程日期'].strftime('%m-%d')}"],
+            marker=dict(size=18, color='#8b6fb8'),
+            text=[row['中程日期'].strftime('%m-%d')],
             textposition="top center",
-            textfont=dict(size=15),
-            opacity=opacity
+            textfont=dict(size=14),
+            opacity=opacity,
+            hovertemplate=f"<b>{product}</b><br>{row.get('M2描述', '无描述')}<extra></extra>"
         ))
 
-    # 结束节点 + 日期
     if pd.notna(row.get("结束日期")):
         fig.add_trace(go.Scatter(
             x=[row["结束日期"]],
             y=[product],
             mode='markers+text',
-            marker=dict(size=17, color='#4a9b6e'),
-            text=[f"M3 {row['结束日期'].strftime('%m-%d')}"],
+            marker=dict(size=18, color='#4a9b6e'),
+            text=[row['结束日期'].strftime('%m-%d')],
             textposition="top center",
-            textfont=dict(size=15),
-            opacity=opacity
+            textfont=dict(size=14),
+            opacity=opacity,
+            hovertemplate=f"<b>{product}</b><br>{row.get('M3描述', '无描述')}<extra></extra>"
         ))
 
 fig.update_layout(
     title="Poros 产品路线图 2026 Q2",
     xaxis_title="时间轴",
     yaxis_title="",
-    height=1050,
+    height=1100,
     showlegend=False,
     hovermode="closest",
     plot_bgcolor="#f8fafc",
     xaxis=dict(type='date', tickformat='%Y-%m-%d'),
-    margin=dict(l=320, r=60, t=120, b=100),
+    margin=dict(l=340, r=60, t=120, b=100),
     font=dict(size=16)
 )
 
