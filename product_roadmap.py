@@ -5,7 +5,7 @@ from datetime import datetime
 
 st.set_page_config(page_title="Poros 产品路线图", layout="wide")
 st.title("🚀 Poros 产品路线图 2026 Q2")
-st.markdown("**左侧选择产品（支持多选），右侧高亮显示对应时间线**")
+st.markdown("**左侧点击产品名称，可高亮查看该产品的起始、中程、结束节点**")
 
 # ====================== 加载数据 ======================
 @st.cache_data
@@ -33,25 +33,18 @@ def load_data():
 
 df = load_data()
 
-# ====================== 左侧菜单（支持查看全部 + 多选） ======================
+# ====================== 左侧菜单 ======================
 st.sidebar.header("📋 产品列表")
+product_list = df["产品名称"].dropna().unique().tolist()
 
-show_all = st.sidebar.checkbox("查看全部产品", value=True)
+if not product_list:
+    st.error("未读取到产品数据，请确保 data.xlsx 已上传！")
+    st.stop()
 
-if show_all:
-    selected_products = df["产品名称"].dropna().unique().tolist()
-else:
-    selected_products = st.sidebar.multiselect(
-        "选择要查看的产品（可多选）",
-        options=df["产品名称"].dropna().unique().tolist(),
-        default=[]
-    )
+selected_product = st.sidebar.radio("选择产品查看详情", product_list)
 
-# ====================== 颜色映射（按负责人柔和分配） ======================
-df['主负责人'] = df['负责人'].astype(str).str.split('@').str[0].str.strip()
-unique_owners = df['主负责人'].unique()
-soft_colors = ['#4a90e2', '#7b68ee', '#50c878', '#f4a261', '#e76f51', '#2a9d8f']
-owner_color_map = {owner: soft_colors[i % len(soft_colors)] for i, owner in enumerate(unique_owners)}
+# ====================== 柔和莫兰迪色系 ======================
+colors = ['#8a9a9e', '#9b8b7f', '#7a9a8e', '#a8b5a2', '#b8a89e', '#9a8b7f']
 
 # ====================== 主图绘制 ======================
 fig = go.Figure()
@@ -61,34 +54,30 @@ for i, row in df.iterrows():
     if not product:
         continue
         
-    owner = row['主负责人']
-    color = owner_color_map.get(owner, '#6b7280')
-    
-    # 高亮逻辑
-    is_highlighted = product in selected_products
-    opacity = 1.0 if is_highlighted else 0.25
-    line_width = 10 if is_highlighted else 6
+    color = colors[i % len(colors)]
+    opacity = 1.0 if product == selected_product else 0.3
 
-    # 水平时间线（动态亮度）
+    # 水平时间线
     if pd.notna(row.get("起始日期")) and pd.notna(row.get("结束日期")):
         fig.add_trace(go.Scatter(
             x=[row["起始日期"], row["结束日期"]],
             y=[product, product],
             mode='lines',
-            line=dict(color=color, width=line_width),
+            line=dict(color=color, width=8),
             opacity=opacity,
             hoverinfo='skip'
         ))
 
-    # 起始节点 + 日期
+    # 起始节点 + 日期（不用hover也能看到）
     if pd.notna(row.get("起始日期")):
         fig.add_trace(go.Scatter(
             x=[row["起始日期"]],
             y=[product],
             mode='markers+text',
-            marker=dict(size=16, color='#1f77b4', symbol='circle'),
+            marker=dict(size=16, color='#5a8bb5', symbol='circle'),
             text=[f"M1 {row['起始日期'].strftime('%m-%d')}"],
             textposition="top center",
+            textfont=dict(size=14),
             opacity=opacity,
             hovertemplate=f"<b>{product}</b><br>起始: {row['起始日期'].strftime('%Y-%m-%d')}<br>{row.get('M1描述', '')}<extra></extra>"
         ))
@@ -99,9 +88,10 @@ for i, row in df.iterrows():
             x=[row["中程日期"]],
             y=[product],
             mode='markers+text',
-            marker=dict(size=16, color='#9467bd', symbol='circle'),
+            marker=dict(size=16, color='#8b6fb8', symbol='circle'),
             text=[f"M2 {row['中程日期'].strftime('%m-%d')}"],
             textposition="top center",
+            textfont=dict(size=14),
             opacity=opacity,
             hovertemplate=f"<b>{product}</b><br>中程: {row['中程日期'].strftime('%Y-%m-%d')}<br>{row.get('M2描述', '')}<extra></extra>"
         ))
@@ -112,9 +102,10 @@ for i, row in df.iterrows():
             x=[row["结束日期"]],
             y=[product],
             mode='markers+text',
-            marker=dict(size=16, color='#2ca02c', symbol='circle'),
+            marker=dict(size=16, color='#5a9b7a', symbol='circle'),
             text=[f"M3 {row['结束日期'].strftime('%m-%d')}"],
             textposition="top center",
+            textfont=dict(size=14),
             opacity=opacity,
             hovertemplate=f"<b>{product}</b><br>结束: {row['结束日期'].strftime('%Y-%m-%d')}<br>{row.get('M3描述', '')}<extra></extra>"
         ))
@@ -128,22 +119,30 @@ fig.update_layout(
     hovermode="closest",
     plot_bgcolor="#f8fafc",
     xaxis=dict(type='date', tickformat='%Y-%m-%d'),
-    margin=dict(l=300, r=50, t=100, b=100),
-    font=dict(size=15)
+    margin=dict(l=300, r=50, t=100, b=120),
+    font=dict(size=16)   # 字体明显加大
 )
 
 st.plotly_chart(fig, use_container_width=True)
 
 # ====================== 右侧详情 ======================
 st.sidebar.markdown("---")
-if selected_products:
-    for prod in selected_products:
-        detail = df[df["产品名称"] == prod].iloc[0]
-        with st.sidebar.expander(f"📋 {prod} 详细信息", expanded=True):
-            st.write(f"**负责人**：{detail.get('负责人', '未填写')}")
-            st.write(f"**当前状态**：{detail.get('当前状态', '未填写')}")
-            st.write(f"**🔵 起始**：{detail.get('起始日期', '')} | {detail.get('M1描述', '')}")
-            st.write(f"**🟣 中程**：{detail.get('中程日期', '')} | {detail.get('M2描述', '')}")
-            st.write(f"**🟢 结束**：{detail.get('结束日期', '')} | {detail.get('M3描述', '')}")
+if selected_product:
+    detail = df[df["产品名称"] == selected_product].iloc[0]
+    st.sidebar.subheader(f"📋 {selected_product} 详细信息")
+    st.sidebar.write(f"**负责人**：{detail.get('负责人', '未填写')}")
+    st.sidebar.write(f"**当前状态**：{detail.get('当前状态', '未填写')}")
+    
+    st.sidebar.markdown("**🔵 起始节点**")
+    st.sidebar.write(f"日期：{detail.get('起始日期', '未填写')}")
+    st.sidebar.write(f"描述：{detail.get('M1描述', '未填写')}")
+    
+    st.sidebar.markdown("**🟣 中程节点**")
+    st.sidebar.write(f"日期：{detail.get('中程日期', '未填写')}")
+    st.sidebar.write(f"描述：{detail.get('M2描述', '未填写')}")
+    
+    st.sidebar.markdown("**🟢 结束节点**")
+    st.sidebar.write(f"日期：{detail.get('结束日期', '未填写')}")
+    st.sidebar.write(f"描述：{detail.get('M3描述', '未填写')}")
 
-st.caption("数据来源：data.xlsx | 修改后重新部署即可更新")
+st.caption("数据来源：data.xlsx | 修改Excel后重新部署即可更新")
