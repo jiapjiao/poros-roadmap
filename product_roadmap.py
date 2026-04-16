@@ -34,25 +34,37 @@ def load_data():
 
 df = load_data()
 
-# ====================== 左侧多选 ======================
+# ====================== 左侧菜单（默认全不选 + 全选按钮） ======================
 st.sidebar.header("📋 产品列表（可多选）")
+
+# 全选 / 取消全选按钮
+col1, col2 = st.sidebar.columns(2)
+if col1.button("全选", use_container_width=True):
+    st.session_state.select_all = True
+if col2.button("取消全选", use_container_width=True):
+    st.session_state.select_all = False
+
+# 默认全不选
+if 'select_all' not in st.session_state:
+    st.session_state.select_all = False
 
 selected_products = []
 for product in df["产品名称"].dropna().unique().tolist():
-    if st.sidebar.checkbox(product, value=True, key=product):
+    checked = st.session_state.select_all
+    if st.sidebar.checkbox(product, value=checked, key=product):
         selected_products.append(product)
 
-# ====================== 主图绘制（时间轴从下往上，产品顺序与左侧一致） ======================
+# ====================== 主图绘制 ======================
 fig = go.Figure()
 colors = ['#1f77b4', '#9467bd', '#2ca02c', '#ff7f0e', '#d62728']
 
-product_order = df["产品名称"].dropna().unique().tolist()
-
-for product in product_order:
-    row = df[df["产品名称"] == product].iloc[0]
-    
+for i, row in df.iterrows():
+    product = str(row.get("产品名称", "")).strip()
+    if not product:
+        continue
+       
     is_highlighted = product in selected_products
-    color = colors[product_order.index(product) % len(colors)]
+    color = colors[i % len(colors)]
     opacity = 1.0 if is_highlighted else 0.35
     line_width = 13 if is_highlighted else 7
 
@@ -110,14 +122,13 @@ fig.update_layout(
     title="Poros 产品路线图 2026 Q2",
     xaxis_title="时间轴",
     yaxis_title="",
-    height=1050,
+    height=950,
     showlegend=False,
     hovermode="closest",
     plot_bgcolor="white",
     xaxis=dict(type='date', tickformat='%Y-%m-%d'),
-    margin=dict(l=320, r=50, t=100, b=100),
-    font=dict(size=16),
-    yaxis=dict(autorange="reversed")   # 关键：纵轴从下往上排列（时间早的在下面）
+    margin=dict(l=300, r=50, t=100, b=100),
+    font=dict(size=16)
 )
 
 st.plotly_chart(fig, use_container_width=True)
