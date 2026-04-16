@@ -128,8 +128,8 @@ if selected_products:
             # 主任务信息
             main = df[df["产品名称"] == prod].iloc[0]
             st.subheader(f"{prod} 主任务")
-            st.write(f"**负责人**：{main.get('负责人', '')}")
-            st.write(f"**当前状态**：{main.get('当前状态', '')}")
+            st.write(f"**负责人**：{main.get('负责人', '未填写')}")
+            st.write(f"**当前状态**：{main.get('当前状态', '未填写')}")
             st.write(f"**M1**：{main.get('起始日期', '')} | {main.get('M1描述', '')}")
             st.write(f"**M2**：{main.get('中程日期', '')} | {main.get('M2描述', '')}")
             st.write(f"**M3**：{main.get('结束日期', '')} | {main.get('M3描述', '')}")
