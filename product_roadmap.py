@@ -42,18 +42,18 @@ for product in df["产品名称"].dropna().unique().tolist():
     if st.sidebar.checkbox(product, value=True, key=product):
         selected_products.append(product)
 
-# ====================== 主图绘制（强制按产品列表顺序排列） ======================
+# ====================== 主图绘制（强制时间轴顺序和左侧列表一致） ======================
 fig = go.Figure()
 colors = ['#1f77b4', '#9467bd', '#2ca02c', '#ff7f0e', '#d62728']
 
-# 关键修复：按 df 中出现的顺序绘制（从上到下）
-for i, row in df.iterrows():
-    product = str(row.get("产品名称", "")).strip()
-    if not product:
-        continue
-       
+# 关键修改：反转顺序，让时间轴从上到下和产品列表一致
+product_order = df["产品名称"].dropna().unique().tolist()
+
+for product in product_order:   # 按左侧列表顺序绘制
+    row = df[df["产品名称"] == product].iloc[0]
+    
     is_highlighted = product in selected_products
-    color = colors[i % len(colors)]
+    color = colors[product_order.index(product) % len(colors)]
     opacity = 1.0 if is_highlighted else 0.35
     line_width = 13 if is_highlighted else 7
 
