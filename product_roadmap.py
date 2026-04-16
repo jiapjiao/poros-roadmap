@@ -34,23 +34,24 @@ def load_data():
 
 df = load_data()
 
-# ====================== 左侧菜单（默认全不选 + 全选按钮） ======================
+# ====================== 左侧菜单（全选按钮优化） ======================
 st.sidebar.header("📋 产品列表（可多选）")
 
 # 全选 / 取消全选按钮
 col1, col2 = st.sidebar.columns(2)
 if col1.button("全选", use_container_width=True):
-    st.session_state.select_all = True
+    st.session_state["select_all"] = True
 if col2.button("取消全选", use_container_width=True):
-    st.session_state.select_all = False
+    st.session_state["select_all"] = False
 
 # 默认全不选
-if 'select_all' not in st.session_state:
-    st.session_state.select_all = False
+if "select_all" not in st.session_state:
+    st.session_state["select_all"] = False
 
 selected_products = []
 for product in df["产品名称"].dropna().unique().tolist():
-    checked = st.session_state.select_all
+    # 使用 session_state 控制默认值
+    checked = st.session_state.get("select_all", False)
     if st.sidebar.checkbox(product, value=checked, key=product):
         selected_products.append(product)
 
