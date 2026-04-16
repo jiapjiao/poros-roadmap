@@ -1,7 +1,6 @@
 import streamlit as st
 import pandas as pd
 import plotly.graph_objects as go
-from datetime import datetime
 
 st.set_page_config(page_title="Poros 产品路线图", layout="wide")
 st.title("🚀 Poros 产品路线图 2026 Q2")
@@ -74,7 +73,7 @@ for product in product_order:
             x=[row["起始日期"]],
             y=[product],
             mode='markers+text',
-            marker=dict(size=15, color='#1f77b4'),
+            marker=dict(size=15, color='#1f77b4', symbol='circle'),
             text=[f"M1 {row['起始日期'].strftime('%m-%d')}"],
             textposition="top center",
             opacity=opacity,
@@ -86,7 +85,7 @@ for product in product_order:
             x=[row["中程日期"]],
             y=[product],
             mode='markers+text',
-            marker=dict(size=15, color='#9467bd'),
+            marker=dict(size=15, color='#9467bd', symbol='circle'),
             text=[f"M2 {row['中程日期'].strftime('%m-%d')}"],
             textposition="top center",
             opacity=opacity,
@@ -98,7 +97,7 @@ for product in product_order:
             x=[row["结束日期"]],
             y=[product],
             mode='markers+text',
-            marker=dict(size=15, color='#2ca02c'),
+            marker=dict(size=15, color='#2ca02c', symbol='circle'),
             text=[f"M3 {row['结束日期'].strftime('%m-%d')}"],
             textposition="top center",
             opacity=opacity,
@@ -125,33 +124,35 @@ st.plotly_chart(fig, use_container_width=True)
 st.sidebar.markdown("---")
 if selected_products:
     for prod in selected_products:
-        with st.sidebar.expander(f"📋 {prod} 详细信息", expanded=False):
-            main_row = df[df["产品名称"] == prod].iloc[0]
-            st.write(f"**负责人**：{main_row.get('负责人', '未填写')}")
-            st.write(f"**当前状态**：{main_row.get('当前状态', '未填写')}")
+        with st.sidebar.expander(f"📋 {prod} 详细信息 + 子任务流程图", expanded=False):
+            # 主任务信息
+            main = df[df["产品名称"] == prod].iloc[0]
+            st.subheader(f"{prod} 主任务")
+            st.write(f"**负责人**：{main.get('负责人', '')}")
+            st.write(f"**当前状态**：{main.get('当前状态', '')}")
+            st.write(f"**M1**：{main.get('起始日期', '')} | {main.get('M1描述', '')}")
+            st.write(f"**M2**：{main.get('中程日期', '')} | {main.get('M2描述', '')}")
+            st.write(f"**M3**：{main.get('结束日期', '')} | {main.get('M3描述', '')}")
 
-            # 显示主任务的 M1/M2/M3
-            st.write("**主任务节点**")
-            st.write(f"**🔵 起始**：{main_row.get('起始日期', '')} | {main_row.get('M1描述', '')}")
-            st.write(f"**🟣 中程**：{main_row.get('中程日期', '')} | {main_row.get('M2描述', '')}")
-            st.write(f"**🟢 结束**：{main_row.get('结束日期', '')} | {main_row.get('M3描述', '')}")
-
-            # 显示子任务（父记录 = 当前产品）
-            sub_tasks = df[df["父记录"] == prod]
-            if not sub_tasks.empty:
-                st.write("**子任务流程图**")
+            # 子任务（父记录 = 当前产品）
+            subs = df[df["父记录"] == prod]
+            if not subs.empty:
+                st.subheader("子任务流程图")
                 sub_fig = go.Figure()
-                for j, sub in sub_tasks.iterrows():
+                for _, sub in subs.iterrows():
                     sub_name = sub["产品名称"]
                     sub_fig.add_trace(go.Scatter(
-                        x=[sub["起始日期"], sub["结束日期"]],
+                        x=[sub.get("起始日期"), sub.get("结束日期")],
                         y=[sub_name, sub_name],
                         mode='lines+markers',
-                        line=dict(width=6),
+                        line=dict(width=7),
+                        marker=dict(size=12),
                         name=sub_name,
                         hovertemplate=f"<b>{sub_name}</b><br>M1: {sub.get('M1描述','')}<br>M2: {sub.get('M2描述','')}<br>M3: {sub.get('M3描述','')}<extra></extra>"
                     ))
-                sub_fig.update_layout(height=400, title="子任务时间线")
+                sub_fig.update_layout(height=400, title=f"{prod} 的子任务时间线")
                 st.plotly_chart(sub_fig, use_container_width=True)
+            else:
+                st.info("该产品暂无子任务记录")
 
 st.caption("数据来源：data.xlsx | 修改Excel后重新部署即可更新")
