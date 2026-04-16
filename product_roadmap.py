@@ -1,7 +1,6 @@
 import streamlit as st
 import pandas as pd
 import plotly.graph_objects as go
-from datetime import datetime, timedelta
 
 st.set_page_config(page_title="Poros 产品路线图", layout="wide")
 st.title("🚀 Poros 产品路线图 2026 Q2")
@@ -35,35 +34,25 @@ def load_data():
 
 df = load_data()
 
-# ====================== 左侧菜单（默认未选 + 全选按钮） ======================
+# ====================== 左侧多选 ======================
 st.sidebar.header("📋 产品列表（可多选）")
 
-# 全选按钮
-if st.sidebar.button("全选 / 取消全选"):
-    # 这里我们用 session_state 来控制全选状态
-    if 'all_selected' not in st.session_state:
-        st.session_state.all_selected = False
-    st.session_state.all_selected = not st.session_state.all_selected
-
 selected_products = []
-product_list = df["产品名称"].dropna().unique().tolist()
-
-for product in product_list:
-    default_value = st.session_state.get('all_selected', False)
-    if st.sidebar.checkbox(product, value=default_value, key=product):
+for product in df["产品名称"].dropna().unique().tolist():
+    if st.sidebar.checkbox(product, value=True, key=product):
         selected_products.append(product)
 
-# ====================== 主图绘制 ======================
+# ====================== 主图绘制（时间轴从下往上，产品顺序与左侧一致） ======================
 fig = go.Figure()
 colors = ['#1f77b4', '#9467bd', '#2ca02c', '#ff7f0e', '#d62728']
 
-for i, row in df.iterrows():
-    product = str(row.get("产品名称", "")).strip()
-    if not product:
-        continue
-       
+product_order = df["产品名称"].dropna().unique().tolist()
+
+for product in product_order:
+    row = df[df["产品名称"] == product].iloc[0]
+    
     is_highlighted = product in selected_products
-    color = colors[i % len(colors)]
+    color = colors[product_order.index(product) % len(colors)]
     opacity = 1.0 if is_highlighted else 0.35
     line_width = 13 if is_highlighted else 7
 
@@ -78,7 +67,7 @@ for i, row in df.iterrows():
             hoverinfo='skip'
         ))
 
-    # 节点
+    # 起始节点
     if pd.notna(row.get("起始日期")):
         fig.add_trace(go.Scatter(
             x=[row["起始日期"]],
@@ -91,6 +80,7 @@ for i, row in df.iterrows():
             hovertemplate=f"<b style='font-size:18px'>{product}</b><br><span style='font-size:18px'>{row.get('M1描述', '')}</span><extra></extra>"
         ))
 
+    # 中程节点
     if pd.notna(row.get("中程日期")):
         fig.add_trace(go.Scatter(
             x=[row["中程日期"]],
@@ -103,6 +93,7 @@ for i, row in df.iterrows():
             hovertemplate=f"<b style='font-size:18px'>{product}</b><br><span style='font-size:18px'>{row.get('M2描述', '')}</span><extra></extra>"
         ))
 
+    # 结束节点
     if pd.notna(row.get("结束日期")):
         fig.add_trace(go.Scatter(
             x=[row["结束日期"]],
@@ -115,15 +106,6 @@ for i, row in df.iterrows():
             hovertemplate=f"<b style='font-size:18px'>{product}</b><br><span style='font-size:18px'>{row.get('M3描述', '')}</span><extra></extra>"
         ))
 
-# ====================== 添加三条纵向参考线 ======================
-today = datetime.now().date()
-three_days_later = today + timedelta(days=3)
-seven_days_later = today + timedelta(days=7)
-
-fig.add_vline(x=today, line_dash="dash", line_color="#E74C3C", line_width=2, annotation_text="今天", annotation_position="top")
-fig.add_vline(x=three_days_later, line_dash="dash", line_color="#F39C12", line_width=2, annotation_text="三天后", annotation_position="top")
-fig.add_vline(x=seven_days_later, line_dash="dash", line_color="#3498DB", line_width=2, annotation_text="七天后", annotation_position="top")
-
 fig.update_layout(
     title="Poros 产品路线图 2026 Q2",
     xaxis_title="时间轴",
@@ -133,8 +115,9 @@ fig.update_layout(
     hovermode="closest",
     plot_bgcolor="white",
     xaxis=dict(type='date', tickformat='%Y-%m-%d'),
-    margin=dict(l=320, r=50, t=120, b=100),
-    font=dict(size=16)
+    margin=dict(l=320, r=50, t=100, b=100),
+    font=dict(size=16),
+    yaxis=dict(autorange="reversed")   # 关键：纵轴从下往上排列（时间早的在下面）
 )
 
 st.plotly_chart(fig, use_container_width=True)
