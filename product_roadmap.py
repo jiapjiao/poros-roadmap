@@ -42,14 +42,13 @@ for product in df["产品名称"].dropna().unique().tolist():
     if st.sidebar.checkbox(product, value=True, key=product):
         selected_products.append(product)
 
-# ====================== 主图绘制（强制时间轴顺序和左侧列表一致） ======================
+# ====================== 主图绘制（时间轴从下往上，产品顺序与左侧一致） ======================
 fig = go.Figure()
 colors = ['#1f77b4', '#9467bd', '#2ca02c', '#ff7f0e', '#d62728']
 
-# 关键修改：反转顺序，让时间轴从上到下和产品列表一致
 product_order = df["产品名称"].dropna().unique().tolist()
 
-for product in product_order:   # 按左侧列表顺序绘制
+for product in product_order:
     row = df[df["产品名称"] == product].iloc[0]
     
     is_highlighted = product in selected_products
@@ -117,7 +116,8 @@ fig.update_layout(
     plot_bgcolor="white",
     xaxis=dict(type='date', tickformat='%Y-%m-%d'),
     margin=dict(l=320, r=50, t=100, b=100),
-    font=dict(size=16)
+    font=dict(size=16),
+    yaxis=dict(autorange="reversed")   # 关键：纵轴从下往上排列（时间早的在下面）
 )
 
 st.plotly_chart(fig, use_container_width=True)
