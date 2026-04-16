@@ -67,40 +67,40 @@ for product in product_order:
             hoverinfo='skip'
         ))
 
-    # 起始节点
+    # 起始节点 + 日期
     if pd.notna(row.get("起始日期")):
         fig.add_trace(go.Scatter(
             x=[row["起始日期"]],
             y=[product],
             mode='markers+text',
             marker=dict(size=15, color='#1f77b4', symbol='circle'),
-            text=["M1"],
+            text=[f"M1 {row['起始日期'].strftime('%m-%d')}"],
             textposition="top center",
             opacity=opacity,
             hovertemplate=f"<b style='font-size:18px'>{product}</b><br><span style='font-size:18px'>{row.get('M1描述', '')}</span><extra></extra>"
         ))
 
-    # 中程节点
+    # 中程节点 + 日期
     if pd.notna(row.get("中程日期")):
         fig.add_trace(go.Scatter(
             x=[row["中程日期"]],
             y=[product],
             mode='markers+text',
             marker=dict(size=15, color='#9467bd', symbol='circle'),
-            text=["M2"],
+            text=[f"M2 {row['中程日期'].strftime('%m-%d')}"],
             textposition="top center",
             opacity=opacity,
             hovertemplate=f"<b style='font-size:18px'>{product}</b><br><span style='font-size:18px'>{row.get('M2描述', '')}</span><extra></extra>"
         ))
 
-    # 结束节点
+    # 结束节点 + 日期
     if pd.notna(row.get("结束日期")):
         fig.add_trace(go.Scatter(
             x=[row["结束日期"]],
             y=[product],
             mode='markers+text',
             marker=dict(size=15, color='#2ca02c', symbol='circle'),
-            text=["M3"],
+            text=[f"M3 {row['结束日期'].strftime('%m-%d')}"],
             textposition="top center",
             opacity=opacity,
             hovertemplate=f"<b style='font-size:18px'>{product}</b><br><span style='font-size:18px'>{row.get('M3描述', '')}</span><extra></extra>"
